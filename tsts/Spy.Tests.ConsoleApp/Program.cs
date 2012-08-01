@@ -18,7 +18,7 @@ namespace Spy.Tests.ConsoleApp
 
     class FakeSpyable
     {
-        private int _randomValue;
+        [Spy] private int _randomValue;
         private IDictionary<string, IDictionary<string, object>> _cache;
 
         public FakeSpyable()

@@ -4,20 +4,22 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
+    using Extensions;
     using Http;
+    using TinyHttp;
 
     public class SpyEngine
     {
         private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
 
         private readonly ISpyableProvider[] _providers;
-        private readonly TinyHttp.Host _tinyHttpHost;
+        private readonly TinyHttpHost _tinyHttpHost;
         public IEnumerable<SpyableObject> SpyableObjects { get; private set; }
 
         public SpyEngine(IEnumerable<ISpyableProvider> providers)
         {
             _providers = providers.ToArray();
-            _tinyHttpHost = new TinyHttp.Host("http://*:12345/", new SpyRequestProcessor(this));
+            _tinyHttpHost = new TinyHttpHost("http://*:12345/", new SpyRequestProcessor(this));
 
             BuildSpyableObjects();
         }
@@ -63,7 +65,7 @@
             return spyableProvider.SpyableObject
                 .GetType()
                 .GetFields(Flags)
-                .Where(f => !f.IsSpecialName)
+                .Where(f => !f.IsSpecialName && f.HasAttribute(typeof (SpyAttribute)))
                 .Select(fieldInfo => new SpyableObject.Field
                                          {
                                              Name = fieldInfo.Name,
@@ -77,7 +79,7 @@
             return spyableProvider.SpyableObject
                 .GetType()
                 .GetProperties(Flags)
-                .Where(f => !f.IsSpecialName && f.GetIndexParameters().Length == 0)
+                .Where(f => !f.IsSpecialName && !f.IsIndexed() && f.HasAttribute(typeof (SpyAttribute)))
                 .Select(fieldInfo => new SpyableObject.Property
                                          {
                                              Name = fieldInfo.Name,
