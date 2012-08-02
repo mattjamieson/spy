@@ -2,7 +2,7 @@ namespace Spy
 {
     using System;
 
-    internal class SpyableObject
+    public class SpyableObject
     {
         public SpyableObject(string name, string description, object o, Field[] fields, Method[] methods, Property[] properties)
         {
@@ -14,18 +14,18 @@ namespace Spy
             Properties = properties;
         }
 
-        internal string Name { get; private set; }
-        internal string Description { get; private set; }
-        internal object Object { get; private set; }
-        internal Field[] Fields { get; private set; }
-        internal Method[] Methods { get; private set; }
-        internal Property[] Properties { get; private set; }
+        public string Name { get; private set; }
+        public string Description { get; private set; }
+        public object Object { get; private set; }
+        public Field[] Fields { get; private set; }
+        public Method[] Methods { get; private set; }
+        public Property[] Properties { get; private set; }
 
-        internal class Field
+        public class Field
         {
-            internal object SpyableObject { get; set; }
-            internal string Name { get; set; }
-            internal Type Type { get; set; }
+            public object SpyableObject { get; set; }
+            public string Name { get; set; }
+            public Type Type { get; set; }
 
             public object GetValue()
             {
@@ -35,11 +35,11 @@ namespace Spy
             }
         }
 
-        internal class Method
+        public class Method
         {
-            internal object SpyableObject { get; set; }
-            internal string Name { get; set; }
-            internal Type Type { get; set; }
+            public object SpyableObject { get; set; }
+            public string Name { get; set; }
+            public Type Type { get; set; }
 
             public object GetValue()
             {
@@ -49,13 +49,13 @@ namespace Spy
             }
         }
 
-        internal class Property
+        public class Property
         {
-            internal object SpyableObject { get; set; }
-            internal string Name { get; set; }
-            internal Type Type { get; set; }
+            public object SpyableObject { get; set; }
+            public string Name { get; set; }
+            public Type Type { get; set; }
 
-            internal object GetValue()
+            public object GetValue()
             {
                 var info = SpyableObject.GetType().GetProperty(Name, SpyEngine.Flags);
                 if (info == null) { throw new Exception(String.Format("Unable to find property {0}", this)); }
