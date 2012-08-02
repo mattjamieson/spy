@@ -1,0 +1,15 @@
+﻿<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
+  <metadata>
+    <id>Spy</id>
+    <version>1.0-alpha</version>
+    <authors>Matt Jamieson</authors>
+    <owners>Matt Jamieson</owners>
+    <licenseUrl>https://raw.github.com/mattjamieson/spy/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/mattjamieson/spy/</projectUrl>
+    <iconUrl>https://raw.github.com/mattjamieson/spy/master/spy.png</iconUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description></description>
+    <tags>spy</tags>
+  </metadata>
+</package>

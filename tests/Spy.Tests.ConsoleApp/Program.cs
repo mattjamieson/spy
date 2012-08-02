@@ -1,18 +1,19 @@
-﻿using System;
-using Spy;
-
-namespace Spy.Tests.ConsoleApp
+﻿namespace Spy.Tests.ConsoleApp
 {
     using System;
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using ServiceStack.Text;
 
     class Program
     {
         static void Main(string[] args)
         {
-            new SpyEngine(new List<ISpyableProvider> {new FakeProvider{ SpyableObject = new FakeSpyable()}}).Start();
+            new SpyEngine("http://*:12345/",
+                          o => o.ToJson(),
+                          new List<ISpyableProvider> {new FakeProvider {SpyableObject = new FakeSpyable()}})
+                .Start();
         }
     }
 

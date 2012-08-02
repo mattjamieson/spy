@@ -2,26 +2,65 @@ namespace Spy
 {
     using System;
 
-    public class SpyableObject
+    internal class SpyableObject
     {
-        public string Name { get; set; }
-        public string Description { get; set; }
-        public object Object { get; set; }
-        public Field[] Fields { get; set; }
-        public Property[] Properties { get; set; }
-
-        public class Field
+        public SpyableObject(string name, string description, object o, Field[] fields, Method[] methods, Property[] properties)
         {
-            public object SpyableObject { get; set; }
-            public string Name { get; set; }
-            public Type Type { get; set; }
+            Name = name;
+            Description = description;
+            Object = o;
+            Fields = fields;
+            Methods = methods;
+            Properties = properties;
         }
 
-        public class Property
+        internal string Name { get; private set; }
+        internal string Description { get; private set; }
+        internal object Object { get; private set; }
+        internal Field[] Fields { get; private set; }
+        internal Method[] Methods { get; private set; }
+        internal Property[] Properties { get; private set; }
+
+        internal class Field
         {
-            public object SpyableObject { get; set; }
-            public string Name { get; set; }
-            public Type Type { get; set; }
+            internal object SpyableObject { get; set; }
+            internal string Name { get; set; }
+            internal Type Type { get; set; }
+
+            public object GetValue()
+            {
+                var info = SpyableObject.GetType().GetField(Name, SpyEngine.Flags);
+                if (info == null) { throw new Exception(String.Format("Unable to find field {0}", this)); }
+                return info.GetValue(SpyableObject);
+            }
+        }
+
+        internal class Method
+        {
+            internal object SpyableObject { get; set; }
+            internal string Name { get; set; }
+            internal Type Type { get; set; }
+
+            public object GetValue()
+            {
+                var info = SpyableObject.GetType().GetMethod(Name, SpyEngine.Flags);
+                if (info == null) { throw new Exception(String.Format("Unable to find method {0}", this)); }
+                return info.Invoke(SpyableObject, null);
+            }
+        }
+
+        internal class Property
+        {
+            internal object SpyableObject { get; set; }
+            internal string Name { get; set; }
+            internal Type Type { get; set; }
+
+            internal object GetValue()
+            {
+                var info = SpyableObject.GetType().GetProperty(Name, SpyEngine.Flags);
+                if (info == null) { throw new Exception(String.Format("Unable to find property {0}", this)); }
+                return info.GetValue(SpyableObject, null);
+            }
         }
     }
 }

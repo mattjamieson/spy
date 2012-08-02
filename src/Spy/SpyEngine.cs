@@ -4,59 +4,53 @@
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
+    using System.Threading;
     using Extensions;
     using Http;
     using TinyHttp;
 
     public class SpyEngine
     {
-        private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        internal const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
 
         private readonly ISpyableProvider[] _providers;
         private readonly TinyHttpHost _tinyHttpHost;
-        public IEnumerable<SpyableObject> SpyableObjects { get; private set; }
-
-        public SpyEngine(IEnumerable<ISpyableProvider> providers)
+        private readonly EventWaitHandle _eventWaitHandle;
+        
+        public SpyEngine(string baseUri, Func<object, string> jsonSerializer, IEnumerable<ISpyableProvider> providers)
         {
             _providers = providers.ToArray();
-            _tinyHttpHost = new TinyHttpHost("http://*:12345/", new SpyRequestProcessor(this));
+            _tinyHttpHost = new TinyHttpHost(baseUri, new SpyRequestProcessor(this));
+            _eventWaitHandle = new AutoResetEvent(false);
+
+            JsonSerializer = jsonSerializer;
 
             BuildSpyableObjects();
         }
 
+        internal Func<object, string> JsonSerializer { get; private set; }
+        internal IEnumerable<SpyableObject> SpyableObjects { get; private set; }
+
         public void Start()
         {
             _tinyHttpHost.Start();
-            while (true) ;
+            _eventWaitHandle.WaitOne();
         }
 
-        public object GetSpyableFieldValue(SpyableObject.Field field)
+        public void Stop()
         {
-            var fieldInfo = field.SpyableObject.GetType().GetField(field.Name, Flags);
-            if (fieldInfo == null) { throw new Exception(String.Format("Unable to find field {0}", field)); }
-
-            return fieldInfo.GetValue(field.SpyableObject);
+            _eventWaitHandle.Set();
         }
-
-        public object GetSpyablePropertyValue(SpyableObject.Property property)
-        {
-            var propertyInfo = property.SpyableObject.GetType().GetProperty(property.Name, Flags);
-            if (propertyInfo == null) { throw new Exception(String.Format("Unable to find property {0}", property)); }
-
-            return propertyInfo.GetValue(property.SpyableObject, null);
-        }
-
+        
         private void BuildSpyableObjects()
         {
             SpyableObjects = _providers
-                .Select(spyableProvider => new SpyableObject
-                                               {
-                                                   Name = spyableProvider.Name,
-                                                   Description = spyableProvider.Description,
-                                                   Object = spyableProvider.SpyableObject,
-                                                   Fields = GetSpyableObjectFields(spyableProvider).ToArray(),
-                                                   Properties = GetSpyableObjectProperties(spyableProvider).ToArray()
-                                               })
+                .Select(spyableProvider => new SpyableObject(spyableProvider.Name,
+                                                             spyableProvider.Description,
+                                                             spyableProvider.SpyableObject,
+                                                             GetSpyableObjectFields(spyableProvider).ToArray(),
+                                                             GetSpyableObjectMethods(spyableProvider).ToArray(),
+                                                             GetSpyableObjectProperties(spyableProvider).ToArray()))
                 .ToArray();
         }
 
@@ -66,12 +60,26 @@
                 .GetType()
                 .GetFields(Flags)
                 .Where(f => !f.IsSpecialName && f.HasAttribute(typeof (SpyAttribute)))
-                .Select(fieldInfo => new SpyableObject.Field
-                                         {
-                                             Name = fieldInfo.Name,
-                                             Type = fieldInfo.FieldType,
-                                             SpyableObject = spyableProvider.SpyableObject
-                                         });
+                .Select(info => new SpyableObject.Field
+                                    {
+                                        Name = info.Name,
+                                        Type = info.FieldType,
+                                        SpyableObject = spyableProvider.SpyableObject
+                                    });
+        }
+
+        private static IEnumerable<SpyableObject.Method> GetSpyableObjectMethods(ISpyableProvider spyableProvider)
+        {
+            return spyableProvider.SpyableObject
+                .GetType()
+                .GetMethods(Flags)
+                .Where(f => !f.IsSpecialName && f.HasAttribute(typeof (SpyAttribute)) && f.HasNoArguments())
+                .Select(info => new SpyableObject.Method
+                                    {
+                                        Name = info.Name,
+                                        Type = info.ReturnType,
+                                        SpyableObject = spyableProvider.SpyableObject
+                                    });
         }
 
         private static IEnumerable<SpyableObject.Property> GetSpyableObjectProperties(ISpyableProvider spyableProvider)
@@ -80,12 +88,12 @@
                 .GetType()
                 .GetProperties(Flags)
                 .Where(f => !f.IsSpecialName && !f.IsIndexed() && f.HasAttribute(typeof (SpyAttribute)))
-                .Select(fieldInfo => new SpyableObject.Property
-                                         {
-                                             Name = fieldInfo.Name,
-                                             Type = fieldInfo.PropertyType,
-                                             SpyableObject = spyableProvider.SpyableObject
-                                         });
+                .Select(info => new SpyableObject.Property
+                                    {
+                                        Name = info.Name,
+                                        Type = info.PropertyType,
+                                        SpyableObject = spyableProvider.SpyableObject
+                                    });
         }
     }
 }
